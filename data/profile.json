@@ -1,1 +1,41 @@
-
+{
+  "name": "Shaktar Delima",
+  "role": "Developer & Programmer",
+  "tagline": "Menciptakan pengalaman digital yang indah dan fungsional",
+  "heroTitle": "Nama Saya.",
+  "heroAccent": "Shaktar Delima",
+  "aboutTitle": "Saya membangun pengalaman digital yang terasa premium.",
+  "bio": "Saya adalah seorang developer dan programmer yang tertarik pada produk digital yang tidak hanya terlihat bagus, tetapi juga mudah dipahami, cepat, dan berdampak nyata bagi pengguna.",
+  "story": "Dari desain interface hingga implementasi front-end, saya membantu brand dan bisnis menghadirkan solusi digital yang modern, user-friendly, dan scalable untuk kebutuhan nyata.",
+  "email": "shaktar.delima@example.com",
+  "location": "Indonesia",
+  "availability": "For freelance work",
+  "stats": [
+    {
+      "value": "5+",
+      "label": "Tahun pengalaman"
+    },
+    {
+      "value": "28",
+      "label": "Proyek selesai"
+    }
+  ],
+  "socials": [
+    {
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com"
+    },
+    {
+      "name": "GitHub",
+      "url": "https://www.github.com"
+    },
+    {
+      "name": "Instagram",
+      "url": "https://www.instagram.com"
+    }
+  ],
+  "images": {
+    "hero": "tre.jpeg",
+    "profile": "tre.jpeg"
+  }
+}
