@@ -1,78 +1,443 @@
-const state = { data: null, activeFilter: 'All' };
+async function loadProfile() {
+  try {
+    const response = await fetch('data/profile.json');
 
-const qs = (selector, parent = document) => parent.querySelector(selector);
-const qsa = (selector, parent = document) => [...parent.querySelectorAll(selector)];
-
-// Data layer: keep content separate from the presentation.
-async function loadPortfolioData() {
-    try {
-        const response = await fetch('data.json');
-        if (!response.ok) throw new Error('Data portfolio tidak ditemukan.');
-        state.data = await response.json();
-        renderPortfolio(state.data);
-    } catch (error) {
-        console.error(error);
-        document.body.classList.add('load-error');
-        qs('#aboutText').textContent = 'Konten belum dapat dimuat. Silakan jalankan halaman melalui local server.';
-    } finally {
-        window.setTimeout(() => qs('#preloader')?.classList.add('is-hidden'), 450);
+    if (!response.ok) {
+      throw new Error('Gagal memuat data profil');
     }
+
+    const profile = await response.json();
+    applyProfile(profile);
+  } catch (error) {
+    console.error(error);
+    const fallback = {
+      name: 'Shaktar Delima',
+      role: 'Developer & Programmer',
+      tagline: 'Menciptakan pengalaman digital yang indah dan fungsional',
+      heroTitle: 'Nama Saya.',
+      heroAccent: 'Shaktar Delima',
+      aboutTitle: 'Saya membangun pengalaman digital yang terasa premium.',
+      bio: 'Saya adalah seorang developer dan programmer yang tertarik pada produk digital yang tidak hanya terlihat bagus, tetapi juga mudah dipahami, cepat, dan berdampak nyata bagi pengguna.',
+      story: 'Dari desain interface hingga implementasi front-end, saya membantu brand dan bisnis menghadirkan solusi digital yang modern, user-friendly, dan scalable untuk kebutuhan nyata.',
+      email: 'shaktar.delima@example.com',
+      availability: 'For freelance work',
+      socials: [
+        { name: 'LinkedIn', url: 'https://www.linkedin.com' },
+        { name: 'GitHub', url: 'https://www.github.com' },
+        { name: 'Instagram', url: 'https://www.instagram.com' }
+      ],
+      images: {
+        hero: 'tre.jpeg',
+        profile: 'tre.jpeg'
+      },
+      stats: [
+        { value: '5+', label: 'Tahun pengalaman' },
+        { value: '28', label: 'Proyek selesai' }
+      ]
+    };
+    applyProfile(fallback);
+  }
 }
 
-function renderPortfolio(data) {
-    const { profile, skills, projects, experience, education, contact } = data;
-    qs('#profilePhoto').src = profile.photo;
-    qs('#profilePhoto').alt = `Foto profil ${profile.name}`;
-    qs('#cvButton').href = profile.cvLink;
-    qs('#typedText').dataset.text = profile.tagline;
-    qs('#aboutText').textContent = profile.about;
-    qs('#socialLinks').innerHTML = profile.socials.map(social => `<a href="${social.url}" target="_blank" rel="noopener" aria-label="${social.name}"><i class="${social.icon}"></i></a>`).join('');
-    qs('#statsGrid').innerHTML = `<div class="stat"><strong data-count="6">0</strong><span>Tahun pengalaman</span></div><div class="stat"><strong data-count="42">0</strong><span>Proyek selesai</span></div><div class="stat"><strong data-count="12">0</strong><span>Penghargaan</span></div>`;
-    renderSkills(skills);
+function applyProfile(profile) {
+  const name = document.querySelector('#profileName');
+  const role = document.querySelector('#profileRole');
+  const title = document.querySelector('#heroTitle');
+  const tagline = document.querySelector('#profileTagline');
+  const availability = document.querySelector('#profileAvailability');
+  const email = document.querySelector('#profileEmail');
+  const aboutTitle = document.querySelector('#aboutTitle');
+  const aboutBio = document.querySelector('#aboutBio');
+  const aboutStory = document.querySelector('#aboutStory');
+  const heroImage = document.querySelector('#heroImage');
+  const profileImage = document.querySelector('#profileImage');
+  const footerText = document.querySelector('#footerText');
+  const socialLinks = document.querySelector('#socialLinks');
+  const statsWrap = document.querySelector('#profileStats');
+
+  if (name) name.textContent = profile.name;
+  if (role) role.textContent = profile.role;
+  if (title) title.textContent = profile.heroTitle;
+  if (tagline) tagline.textContent = profile.tagline;
+  if (availability) availability.textContent = profile.availability;
+  if (email) {
+    email.textContent = profile.email;
+    email.href = `mailto:${profile.email}`;
+  }
+  if (aboutTitle) aboutTitle.textContent = profile.aboutTitle;
+  if (aboutBio) aboutBio.textContent = profile.bio;
+  if (aboutStory) aboutStory.textContent = profile.story;
+  if (heroImage) heroImage.src = profile.images.hero;
+  if (profileImage) profileImage.src = profile.images.profile;
+  if (footerText) footerText.textContent = `© ${new Date().getFullYear()} ${profile.name}. All rights reserved.`;
+
+  if (socialLinks && profile.socials) {
+    socialLinks.innerHTML = profile.socials
+      .map(
+        (social) => `
+          <a href="${social.url}" target="_blank" rel="noreferrer" aria-label="${social.name}" class="transition hover:text-apple-black">${social.name}</a>
+        `
+      )
+      .join('');
+  }
+
+  if (statsWrap && profile.stats) {
+    statsWrap.innerHTML = profile.stats
+      .map(
+        (stat) => `
+          <div>
+            <div class="text-2xl font-semibold text-apple-black">${stat.value}</div>
+            <div>${stat.label}</div>
+          </div>
+        `
+      )
+      .join('');
+  }
+}
+
+// Data proyek diambil dari file JSON agar mudah dikelola dan diperbarui.
+async function loadProjects() {
+  try {
+    const response = await fetch('data/projects.json');
+
+    if (!response.ok) {
+      throw new Error('Gagal memuat data proyek');
+    }
+
+    const projects = await response.json();
     renderProjects(projects);
-    renderTimeline('#experienceTimeline', experience, item => `<strong>${item.title}</strong><span>${item.company}</span><p>${item.description}</p>`);
-    renderTimeline('#educationTimeline', education, item => `<strong>${item.degree}</strong><span>${item.school}</span><p>${item.description}</p>`);
-    qs('#contactDetails').innerHTML = `<a href="mailto:${contact.email}"><i class="fa-regular fa-envelope"></i><span>${contact.email}</span></a><a href="tel:${contact.phone.replaceAll(' ', '')}"><i class="fa-solid fa-phone"></i><span>${contact.phone}</span></a><p><i class="fa-solid fa-location-dot"></i><span>${contact.location}</span></p>`;
-    qs('#copyright').textContent = `© ${new Date().getFullYear()} ${profile.name}. Dibuat dengan niat baik.`;
-    startTyping(profile.tagline);
-    observeCounters();
-}
-
-function renderSkills(skills) {
-    const categories = [{ key: 'frontend', label: 'Frontend', icon: 'fa-solid fa-code' }, { key: 'backend', label: 'Backend', icon: 'fa-solid fa-server' }, { key: 'tools', label: 'Tools', icon: 'fa-solid fa-wand-magic-sparkles' }];
-    qs('#skillsGrid').innerHTML = categories.map(category => `<article class="skill-card"><div class="skill-card-head"><span class="skill-icon"><i class="${category.icon}"></i></span><h3>${category.label}</h3></div>${skills[category.key].map(skill => `<div class="skill-item"><div class="skill-label"><span>${skill.name}</span><strong>${skill.level}%</strong></div><div class="progress-track"><span class="progress-bar" data-level="${skill.level}"></span></div></div>`).join('')}</article>`).join('');
-    window.setTimeout(() => qsa('.progress-bar').forEach(bar => { bar.style.width = `${bar.dataset.level}%`; }), 300);
+  } catch (error) {
+    console.error(error);
+    const fallback = [
+      {
+        title: 'Asteria Commerce',
+        category: 'E-Commerce Platform',
+        description: 'Desain produk dan front-end untuk pengalaman belanja premium.',
+        image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=80',
+        url: '#'
+      }
+    ];
+    renderProjects(fallback);
+  }
 }
 
 function renderProjects(projects) {
-    const categories = ['All', ...new Set(projects.map(project => project.category))];
-    qs('#projectFilters').innerHTML = categories.map((category, index) => `<button class="filter-button ${index === 0 ? 'active' : ''}" data-filter="${category}" role="tab" aria-selected="${index === 0}">${category}</button>`).join('');
-    qs('#projectFilters').addEventListener('click', event => { const button = event.target.closest('.filter-button'); if (!button) return; state.activeFilter = button.dataset.filter; qsa('.filter-button').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-selected', item === button); }); renderProjectCards(projects); });
-    renderProjectCards(projects);
+  const grid = document.querySelector('#projectsGrid');
+
+  if (!grid) {
+    return;
+  }
+
+  const safeProjects = Array.isArray(projects) ? projects : [];
+
+  grid.innerHTML = `
+    <div class="project-slider-viewport">
+      <div class="project-slider-track">
+        ${safeProjects
+          .map(
+            (project) => `
+              <article class="project-slide reveal">
+                <div class="project-card h-full">
+                  <a href="${project.url || '#'}" aria-label="Open project ${project.title}" class="block h-full">
+                    <div class="overflow-hidden">
+                      <img src="${project.image}" alt="${project.title} preview" loading="lazy" />
+                    </div>
+                    <div class="project-meta flex items-start justify-between gap-4">
+                      <div>
+                        <p class="project-category">${project.category}</p>
+                        <h3 class="mt-3 text-2xl font-semibold tracking-[-0.05em] text-apple-black">${project.title}</h3>
+                        <p class="mt-3 text-base leading-7 text-apple-muted">${project.description}</p>
+                      </div>
+                      <span class="project-arrow" aria-hidden="true">→</span>
+                    </div>
+                  </a>
+                </div>
+              </article>
+            `
+          )
+          .join('')}
+      </div>
+    </div>
+
+    <div class="project-slider-controls mt-8 flex items-center justify-between">
+      <div class="project-dots flex items-center gap-2" aria-label="Project pagination">
+        ${safeProjects
+          .map(
+            (_, index) => `
+              <button class="project-dot h-2.5 w-2.5 rounded-full bg-apple-black/30 transition-all ${index === 0 ? 'is-active' : ''}" data-index="${index}" aria-label="Go to project ${index + 1}"></button>
+            `
+          )
+          .join('')}
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="projectPrev" class="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-lg text-apple-black transition hover:bg-[#f5f5f7]" aria-label="Previous project">←</button>
+        <button id="projectNext" class="flex h-11 w-11 items-center justify-center rounded-full bg-apple-black text-lg text-white transition hover:bg-[#2d2d31]" aria-label="Next project">→</button>
+      </div>
+    </div>
+  `;
+
+  initProjectSlider();
+  revealOnScroll();
 }
 
-function renderProjectCards(projects) {
-    const visibleProjects = state.activeFilter === 'All' ? projects : projects.filter(project => project.category === state.activeFilter);
-    qs('#projectsGrid').innerHTML = visibleProjects.map(project => `<article class="project-card reveal is-visible"><button class="project-image" data-project-id="${project.id}" aria-label="Lihat detail ${project.title}"><img src="${project.image}" alt="Preview proyek ${project.title}" loading="lazy"><span class="project-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button><div class="project-info"><p class="project-category">${project.category}</p><h3>${project.title}</h3><p>${project.description}</p><button class="text-button" data-project-id="${project.id}">Lihat detail <i class="fa-solid fa-arrow-right"></i></button></div></article>`).join('');
-    qsa('[data-project-id]').forEach(button => button.addEventListener('click', () => openProjectModal(Number(button.dataset.projectId))));
+function initProjectSlider() {
+  const track = document.querySelector('.project-slider-track');
+  const slides = document.querySelectorAll('.project-slide');
+  const dots = document.querySelectorAll('.project-dot');
+  const prevBtn = document.querySelector('#projectPrev');
+  const nextBtn = document.querySelector('#projectNext');
+
+  if (!track || !slides.length || !dots.length || !prevBtn || !nextBtn) {
+    return;
+  }
+
+  const slider = document.querySelector('.project-slider-container');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const autoplayDelay = 5000;
+  let index = 0;
+  let autoplayTimer;
+
+  const updateSlider = (nextIndex) => {
+    index = (nextIndex + slides.length) % slides.length;
+    track.style.transform = `translateX(-${index * 100}%)`;
+
+    dots.forEach((dot, dotIndex) => {
+      const active = dotIndex === index;
+      dot.classList.toggle('is-active', active);
+      dot.style.width = active ? '2.2rem' : '0.625rem';
+      dot.style.background = active ? '#1d1d1f' : 'rgba(29,29,31,0.3)';
+    });
+  };
+
+  const stopAutoplay = () => {
+    window.clearInterval(autoplayTimer);
+    autoplayTimer = undefined;
+  };
+
+  const startAutoplay = () => {
+    stopAutoplay();
+
+    if (
+      slides.length < 2 ||
+      prefersReducedMotion.matches ||
+      document.hidden ||
+      slider.matches(':hover') ||
+      slider.contains(document.activeElement)
+    ) {
+      return;
+    }
+
+    autoplayTimer = window.setInterval(() => updateSlider(index + 1), autoplayDelay);
+  };
+
+  prevBtn.addEventListener('click', () => {
+    updateSlider(index - 1);
+    startAutoplay();
+  });
+  nextBtn.addEventListener('click', () => {
+    updateSlider(index + 1);
+    startAutoplay();
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener('click', () => {
+      updateSlider(Number(dot.dataset.index));
+      startAutoplay();
+    });
+  });
+
+  slider.addEventListener('mouseenter', stopAutoplay);
+  slider.addEventListener('mouseleave', startAutoplay);
+  slider.addEventListener('focusin', stopAutoplay);
+  slider.addEventListener('focusout', (event) => {
+    if (!slider.contains(event.relatedTarget)) {
+      startAutoplay();
+    }
+  });
+  document.addEventListener('visibilitychange', startAutoplay);
+  prefersReducedMotion.addEventListener('change', startAutoplay);
+
+  updateSlider(0);
+  startAutoplay();
 }
 
-function renderTimeline(selector, items, markup) { qs(selector).innerHTML = items.map(item => `<article class="timeline-item"><span class="timeline-year">${item.year}</span><div class="timeline-content">${markup(item)}</div></article>`).join(''); }
+function revealOnScroll() {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.14 }
+  );
 
-function openProjectModal(id) {
-    const project = state.data.projects.find(item => item.id === id); if (!project) return;
-    qs('#modalImage').src = project.image; qs('#modalImage').alt = `Preview ${project.title}`; qs('#modalCategory').textContent = project.category; qs('#modalTitle').textContent = project.title; qs('#modalDescription').textContent = project.description; qs('#modalTech').innerHTML = project.tech.map(item => `<span>${item}</span>`).join(''); qs('#modalDemo').href = project.demoUrl; qs('#modalRepo').href = project.repoUrl;
-    qs('#projectModal').classList.add('is-open'); qs('#projectModal').setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); qs('.modal-close').focus();
+  document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
 }
-function closeProjectModal() { qs('#projectModal').classList.remove('is-open'); qs('#projectModal').setAttribute('aria-hidden', 'true'); document.body.classList.remove('modal-open'); }
 
-function startTyping(text) { const target = qs('#typedText'); let index = 0; let deleting = false; const type = () => { target.textContent = deleting ? text.slice(0, index--) : text.slice(0, index++); if (!deleting && index > text.length) { deleting = true; return window.setTimeout(type, 2200); } if (deleting && index < 0) { deleting = false; index = 0; } window.setTimeout(type, deleting ? 45 : 75); }; type(); }
-function observeCounters() { const counters = qsa('[data-count]'); const observer = new IntersectionObserver(entries => { entries.forEach(entry => { if (!entry.isIntersecting || entry.target.dataset.done) return; entry.target.dataset.done = 'true'; const target = Number(entry.target.dataset.count); let value = 0; const timer = window.setInterval(() => { value += 1; entry.target.textContent = `${value}${target === 6 ? '+' : ''}`; if (value >= target) window.clearInterval(timer); }, 50); }); }, { threshold: 0.6 }); counters.forEach(counter => observer.observe(counter)); }
-function setupReveal() { const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('is-visible'); }), { threshold: 0.12 }); qsa('.reveal').forEach(element => observer.observe(element)); }
-function setupNavigation() { const header = qs('.site-header'); const menuToggle = qs('#menuToggle'); const menu = qs('#mainMenu'); menuToggle.addEventListener('click', () => { const open = menu.classList.toggle('is-open'); menuToggle.setAttribute('aria-expanded', open); menuToggle.innerHTML = `<i class="fa-solid fa-${open ? 'xmark' : 'bars'}"></i>`; }); qsa('#mainMenu a').forEach(link => link.addEventListener('click', () => { menu.classList.remove('is-open'); menuToggle.setAttribute('aria-expanded', 'false'); menuToggle.innerHTML = '<i class="fa-solid fa-bars"></i>'; })); qs('#themeToggle').addEventListener('click', toggleTheme); const savedTheme = localStorage.getItem('portfolio-theme'); if (savedTheme === 'light') document.body.classList.add('light-theme'); window.addEventListener('scroll', () => { header.classList.toggle('scrolled', window.scrollY > 24); qs('#scrollProgress').style.width = `${(window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100}%`; qs('.back-to-top').classList.toggle('visible', window.scrollY > 500); }, { passive: true }); }
-function toggleTheme() { const light = document.body.classList.toggle('light-theme'); localStorage.setItem('portfolio-theme', light ? 'light' : 'dark'); qs('#themeToggle i').className = `fa-solid fa-${light ? 'sun' : 'moon'}`; }
-function setupForm() { qs('#contactForm').addEventListener('submit', event => { event.preventDefault(); const form = event.currentTarget; let valid = true; qsa('input, textarea', form).forEach(field => { const error = qs('.error-message', field.parentElement); let message = ''; if (!field.value.trim()) message = 'Bagian ini wajib diisi.'; else if (field.type === 'email' && !/^\S+@\S+\.\S+$/.test(field.value)) message = 'Gunakan format email yang valid.'; error.textContent = message; field.classList.toggle('invalid', Boolean(message)); if (message) valid = false; }); if (valid) { qs('#formStatus').textContent = 'Terima kasih. Pesanmu sudah siap dikirim.'; form.reset(); } }); }
+function initThemeToggle() {
+  const root = document.documentElement;
+  const toggle = document.querySelector('#themeToggle');
+  const sunIcon = document.querySelector('#themeIconSun');
+  const moonIcon = document.querySelector('#themeIconMoon');
 
-qsa('[data-close-modal]').forEach(element => element.addEventListener('click', closeProjectModal));
-document.addEventListener('keydown', event => { if (event.key === 'Escape') closeProjectModal(); });
-setupNavigation(); setupReveal(); setupForm(); loadPortfolioData();
+  if (!toggle || !sunIcon || !moonIcon) {
+    return;
+  }
+
+  const savedTheme = localStorage.getItem('theme');
+  const preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  const applyTheme = (isDark) => {
+    root.classList.toggle('dark', isDark);
+    sunIcon.classList.toggle('hidden', isDark);
+    moonIcon.classList.toggle('hidden', !isDark);
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  };
+
+  const isDark = savedTheme ? savedTheme === 'dark' : preferredDark;
+  applyTheme(isDark);
+
+  toggle.addEventListener('click', () => {
+    applyTheme(!root.classList.contains('dark'));
+  });
+}
+
+function initMenuToggle() {
+  const toggle = document.querySelector('#menuToggle');
+  const mobileMenu = document.querySelector('#mobileMenu');
+
+  if (!toggle || !mobileMenu) {
+    return;
+  }
+
+  const setMenuOpen = (isOpen) => {
+    mobileMenu.classList.toggle('is-open', isOpen);
+    mobileMenu.setAttribute('aria-hidden', String(!isOpen));
+    mobileMenu.inert = !isOpen;
+    toggle.classList.toggle('is-open', isOpen);
+    toggle.setAttribute('aria-expanded', String(isOpen));
+    toggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    toggle.title = isOpen ? 'Close navigation menu' : 'Open navigation menu';
+  };
+
+  toggle.addEventListener('click', () => {
+    setMenuOpen(!mobileMenu.classList.contains('is-open'));
+  });
+
+  mobileMenu.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => setMenuOpen(false));
+  });
+}
+
+function initActiveNavigation() {
+  const links = document.querySelectorAll('#navMenu a[href^="#"], #mobileMenu a[href^="#"]');
+  const sections = Array.from(links)
+    .map((link) => document.querySelector(link.getAttribute('href')))
+    .filter((section, index, allSections) => section && allSections.indexOf(section) === index);
+
+  if (!links.length || !sections.length) {
+    return;
+  }
+
+  const setActiveSection = (sectionId) => {
+    links.forEach((link) => {
+      const isActive = link.getAttribute('href') === `#${sectionId}`;
+      link.classList.toggle('is-active', isActive);
+
+      if (isActive) {
+        link.setAttribute('aria-current', 'location');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visibleSection = entries.find((entry) => entry.isIntersecting);
+      if (visibleSection) {
+        setActiveSection(visibleSection.target.id);
+      }
+    },
+    { rootMargin: '-25% 0px -65% 0px' }
+  );
+
+  sections.forEach((section) => observer.observe(section));
+}
+
+function initTestimonials() {
+  const track = document.querySelector('#testimonialTrack');
+  const dots = document.querySelectorAll('.testimonial-dot');
+  const nextBtn = document.querySelector('#nextTestimonial');
+  const prevBtn = document.querySelector('#prevTestimonial');
+
+  if (!track || !dots.length || !nextBtn || !prevBtn) {
+    return;
+  }
+
+  let index = 0;
+  const totalSlides = track.children.length;
+
+  function renderSlide(currentIndex) {
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+    dots.forEach((dot, dotIndex) => {
+      dot.classList.toggle('is-active', dotIndex === currentIndex);
+      dot.classList.toggle('bg-apple-black/40', dotIndex !== currentIndex);
+      dot.classList.toggle('bg-apple-black/20', dotIndex !== currentIndex);
+    });
+  }
+
+  nextBtn.addEventListener('click', () => {
+    index = (index + 1) % totalSlides;
+    renderSlide(index);
+  });
+
+  prevBtn.addEventListener('click', () => {
+    index = (index - 1 + totalSlides) % totalSlides;
+    renderSlide(index);
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const targetIndex = Number(dot.dataset.index);
+      index = targetIndex;
+      renderSlide(index);
+    });
+  });
+
+  renderSlide(index);
+}
+
+function initParallax() {
+  const items = document.querySelectorAll('[data-parallax]');
+
+  if (!items.length || !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+    return;
+  }
+
+  const updateParallax = () => {
+    items.forEach((item) => {
+      const speed = Number(item.dataset.parallax || 0.08);
+      const rect = item.getBoundingClientRect();
+      const offset = (window.innerHeight - rect.top) * speed;
+      item.style.transform = `translateY(${offset * -0.06}px)`;
+    });
+  };
+
+  window.addEventListener('scroll', updateParallax, { passive: true });
+  updateParallax();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadProfile();
+  loadProjects();
+  initThemeToggle();
+  initMenuToggle();
+  initActiveNavigation();
+  initTestimonials();
+  initParallax();
+});
